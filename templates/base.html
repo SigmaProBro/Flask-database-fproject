@@ -12,6 +12,9 @@
     <a href="/logout">Вийти</a>
     <a href="{{ url_for('cart') }}">Кошик</a>
     <a href="{{ url_for('index') }}">Головна</a>
+    <a href="{{ url_for('my_orders') }}">Мої замовлення</a>
+    <a href="{{ url_for('booking') }}">Забронювати столик</a>
+    <a href="{{ url_for('my_bookings') }}">Мої бронювання</a>
 {% else %}
     <a href="/register">Реєстрація</a>
     <a href="/login">Логін</a>

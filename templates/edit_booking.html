@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Редагувати бронювання</h1>
+
+<form method="POST">
+    <input type="text" name="place" value="{{ booking.place }}" required>
+
+    <input type="datetime-local" name="booking_time"
+           value="{{ booking.booking_time.strftime('%Y-%m-%dT%H:%M') }}" required>
+
+    <input type="number" name="people_count"
+           value="{{ booking.people_count }}" min="1" required>
+
+    <textarea name="comment">{{ booking.comment or '' }}</textarea>
+
+    <button type="submit">Зберегти</button>
+</form>
+
+<form method="POST" action="{{ url_for('cancel_booking', booking_id=booking.id) }}">
+    <button type="submit">Скасувати бронювання</button>
+</form>
+
+<a href="{{ url_for('my_bookings') }}">Назад</a>
+{% endblock %}

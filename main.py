@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
-from database import SessionLocal, User, Food, Booking
+from database import SessionLocal, User, Food, Booking, Orders, OrderItem
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
 
@@ -176,6 +176,11 @@ def cart():
     cart = session.get('cart', {})
 
     if request.method == 'POST':
+
+        if request.form.get('action') == 'clear':
+            session.pop('cart', None)
+            return redirect(url_for('cart'))
+
         food_id = request.form['food_id']
         cart.pop(food_id, None)
         session['cart'] = cart
@@ -199,6 +204,213 @@ def cart():
 
     return render_template('cart.html', foods=foods, total=total)
 
+
+@app.route('/my_orders')
+def my_orders():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    with SessionLocal() as db:
+        orders = db.query(Orders).filter_by(
+            user_id=session['user_id']
+        ).order_by(Orders.created_at.desc()).all()
+
+        return render_template('my_orders.html', orders=orders)
+
+
+@app.route('/my_order/<int:id>')
+def my_order(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    with SessionLocal() as db:
+        order = db.query(Orders).filter_by(
+            id=id,
+            user_id=session['user_id']
+        ).first()
+
+        if not order:
+            return 'Замовлення не знайдено', 404
+
+        items = db.query(OrderItem).filter_by(
+            order_id=order.id
+        ).all()
+
+        return render_template(
+            'my_order.html',
+            order=order,
+            items=items
+        )
+
+@app.route('/create_order', methods=['POST'])
+def create_order():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    cart = session.get('cart', {})
+
+    if not cart:
+        return redirect(url_for('cart'))
+
+    with SessionLocal() as db:
+        order = Orders(
+            user_id=session['user_id'],
+            total=0
+        )
+
+        db.add(order)
+        db.flush()
+
+        total = 0
+
+        for food_id, quantity in cart.items():
+            food = db.get(Food, int(food_id))
+
+            if food and quantity > 0:
+                db.add(OrderItem(
+                    order_id=order.id,
+                    food_name=food.name,
+                    quantity=quantity,
+                    price=food.price
+                ))
+
+                total += food.price * quantity
+
+        if total == 0:
+            db.rollback()
+            return redirect(url_for('cart'))
+
+        order.total = total
+        db.commit()
+
+    session.pop('cart', None)
+
+    return redirect(url_for('my_orders'))
+
+
+
+@app.route('/cancel_order/<int:order_id>', methods=['POST'])
+def cancel_order(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    with SessionLocal() as db:
+        order = db.query(Orders).filter_by(
+            id=order_id,
+            user_id=session['user_id']
+        ).first()
+
+        if not order:
+            return 'Замовлення не знайдено', 404
+
+        db.query(OrderItem).filter_by(
+            order_id=order.id
+        ).delete()
+
+        db.delete(order)
+        db.commit()
+
+    return redirect(url_for('my_orders'))
+
+
+@app.route('/booking', methods=['GET', 'POST'])
+def booking():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        with SessionLocal() as db:
+            new_booking = Booking(
+                user_id=session['user_id'],
+                place=request.form['place'],
+                booking_time=datetime.strptime(
+                    request.form['booking_time'],
+                    '%Y-%m-%dT%H:%M'
+                ),
+                people_count=int(request.form['people_count']),
+                comment=request.form.get('comment', '')
+            )
+
+            db.add(new_booking)
+            db.commit()
+
+        return redirect(url_for('index'))
+
+    return render_template('booking.html')
+
+
+@app.route('/my_bookings')
+def my_bookings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    now = datetime.now()
+
+    bookings = db.query(Booking).filter(
+        Booking.user_id == session['user_id'],
+        Booking.booking_time > now - timedelta(hours=24)
+    ).all()
+
+    db.close()
+    return render_template('my_bookings.html', bookings=bookings)
+
+
+@app.route('/edit_booking/<int:booking_id>', methods=['GET', 'POST'])
+def edit_booking(booking_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    booking = db.query(Booking).filter_by(
+        id=booking_id,
+        user_id=session['user_id']
+    ).first()
+
+    if not booking:
+        db.close()
+        return 'Бронювання не знайдено', 404
+
+    if request.method == 'POST':
+        booking.place = request.form['place']
+        booking.booking_time = datetime.strptime(
+            request.form['booking_time'], '%Y-%m-%dT%H:%M'
+        )
+        booking.people_count = int(request.form['people_count'])
+        booking.comment = request.form.get('comment', '')
+
+        db.commit()
+        db.close()
+
+        return redirect(url_for('my_bookings'))
+
+    db.close()
+    return render_template('edit_booking.html', booking=booking)
+
+@app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
+def cancel_booking(booking_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    db = SessionLocal()
+    booking = db.query(Booking).filter_by(
+        id=booking_id,
+        user_id=session['user_id']
+    ).first()
+
+    if not booking:
+        db.close()
+        return 'Бронювання не знайдено', 404
+
+    if (booking.booking_time - datetime.now()).total_seconds() < 48 * 60 * 60:
+        db.close()
+        return 'Не можна скасувати бронювання менш ніж за 48 годин до сеансу.'
+
+    db.delete(booking)
+    db.commit()
+    db.close()
+
+    return redirect(url_for('my_bookings'))
 
 @app.route('/logout')
 def logout():

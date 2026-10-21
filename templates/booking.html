@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Бронювання столика</h1>
+
+<form method="POST">
+    <input type="text" name="place" placeholder="Місце" required>
+
+    <input type="datetime-local" name="booking_time" required>
+
+    <input type="number" name="people_count" placeholder="Кількість людей" min="1" required>
+
+    <textarea name="comment" placeholder="Коментар"></textarea>
+
+    <button type="submit">Забронювати</button>
+</form>
+{% endblock %}

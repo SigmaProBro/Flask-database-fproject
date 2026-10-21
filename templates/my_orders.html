@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Історія замовлень</h1>
+
+{% for order in orders %}
+<div>
+    <h3>Замовлення №{{ order.id }}</h3>
+    <p>Дата: {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+    <p>Сума: {{ "%.2f"|format(order.total) }} €</p>
+    <p>Статус: {{ order.status }}</p>
+
+    <form action="{{ url_for('my_order', id=order.id) }}" method="GET">
+        <button type="submit">Деталі</button>
+    </form>
+
+    <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="POST">
+        <button type="submit">Скасувати замовлення</button>
+    </form>
+</div>
+<hr>
+{% else %}
+<p>У тебе поки немає замовлень.</p>
+{% endfor %}
+{% endblock %}

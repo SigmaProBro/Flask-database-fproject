@@ -1,0 +1,24 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Замовлення №{{ order.id }}</h1>
+
+<p>Дата: {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+<p>Статус: {{ order.status }}</p>
+
+<h2>Страви</h2>
+
+{% for item in items %}
+    <p>
+        {{ item.food_name }} × {{ item.quantity }}
+        — {{ "%.2f"|format(item.price * item.quantity) }} €
+    </p>
+{% else %}
+    <p>У замовленні немає страв.</p>
+{% endfor %}
+
+<h3>Загальна сума: {{ "%.2f"|format(order.total) }} €</h3>
+
+<a href="{{ url_for('my_orders') }}">Назад до замовлень</a>
+{% endblock %}
