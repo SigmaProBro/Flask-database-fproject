@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Наше меню{% endblock %}
+
+{% block content %}
+<h2>Наше меню</h2>
+
+{% for food in foods %}
+{% if session.get('is_admin') %}
+<form method="POST" action="{{ url_for('delete_food', food_id=food.id) }}">
+    <span>{{ food.name }}</span>
+    <button type="submit">Видалити</button>
+</form>
+{% endif %}
+
+
+<a href="{{ url_for('position', name=food.name) }}">
+    Детальніше
+</a>
+    <div>
+        <h3>{{ food.name }}</h3>
+        <p>Ціна: {{ "%.2f"|format(food.price) }} €</p>
+
+        {% if food.image %}
+            <img src="{{ url_for('static', filename=food.image) }}"
+                 alt="{{ food.name }}" width="200">
+        {% endif %}
+    </div>
+{% else %}
+    <p>Меню поки порожнє.</p>
+{% endfor %}
+
+{% endblock %}

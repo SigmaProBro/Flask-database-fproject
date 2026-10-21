@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Мій кошик</h1>
+
+{% for item in foods %}
+    <h3>{{ item.food.name }}</h3>
+    <p>Кількість: {{ item.quantity }}</p>
+    <p>Ціна: {{ item.sum }} €</p>
+
+    <form method="POST">
+        <input type="hidden" name="food_id" value="{{ item.food.id }}">
+        <button type="submit">Видалити</button>
+    </form>
+{% else %}
+    <p>Кошик порожній</p>
+{% endfor %}
+
+<h2>Разом: {{ "%.2f"|format(total) }} €</h2>
+
+{% endblock %}

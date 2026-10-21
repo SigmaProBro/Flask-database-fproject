@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Ресторан</title>
+</head>
+<body>
+
+<nav>
+    {% if session.get('user_id') %}
+    <a href="/menu">Меню</a>
+    <a href="/logout">Вийти</a>
+    <a href="{{ url_for('cart') }}">Кошик</a>
+    <a href="{{ url_for('index') }}">Головна</a>
+{% else %}
+    <a href="/register">Реєстрація</a>
+    <a href="/login">Логін</a>
+    <a href="/menu">Меню</a>
+{% endif %}
+</nav>
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ food.name }}</h1>
+
+<img src="{{ url_for('static', filename=food.image) }}"
+     alt="{{ food.name }}" width="300">
+
+<p>Опис: {{ food.description or 'Не вказано' }}</p>
+<p>Інгредієнти: {{ food.ingredients or 'Не вказано' }}</p>
+<p>Ціна: {{ food.price }} €</p>
+<p>Вага: {{ food.weight or 'Не вказано' }} г</p>
+
+<form method="POST">
+    <button type="submit">Додати в кошик</button>
+</form>
+{% endblock %}

@@ -1,0 +1,16 @@
+
+{% extends "base.html" %}
+
+{% block title %}Головна{% endblock %}
+
+{% block content %}
+    <h2>Вітаємо в нашому ресторані!</h2>
+    <p>Спробуйте смачні страви фінської кухні.</p>
+
+{% if session.get('is_admin') %}
+    <a href="/admin">
+        <button>Адмін-панель</button>
+    </a>
+{% endif %}
+
+{% endblock %}
